@@ -1,0 +1,36 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: auth-service
+  datasource:
+#    url: jdbc:mysql://localhost:3306/auth_db?useSSL=false
+    url: jdbc:mysql://127.0.0.1:3306/auth_db?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=UTC&useSSL=true
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+github:
+  oauth:
+    client-id: ${GITHUB_CLIENT_ID:Ov23li9SDaL9C8ph98Sb}
+    client-secret: ${GITHUB_CLIENT_SECRET:1398eb553dec184c5489a218d1225cd323d165df}
+    redirect-uri: ${GITHUB_REDIRECT_URI:http://localhost:8082/auth/github/callback}
+ldap:
+  urls: ldap://localhost:389
+  base: dc=example,dc=com
+  user-dn: cn=admin,dc=example,dc=com
+  password: adminpassword
+  # 用户搜索过滤条件，{0} 会被替换为用户名
+  user-search-filter: (uid={0})
+  # 组搜索基础 DN 及过滤条件
+  group-search-base: ou=groups
+  group-search-filter: (member={0})
+  # 角色映射：LDAP组DN -> 系统角色
+  role-mapping:
+    "cn=admins,ou=groups,dc=example,dc=com": PRODUCT_ADMIN
+    "cn=editors,ou=groups,dc=example,dc=com": EDITOR
+    "cn=users,ou=groups,dc=example,dc=com": USER

@@ -1,0 +1,58 @@
+<!-- 前端示例：GitHub 登录按钮 -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>GitHub OAuth2 登录</title>
+</head>
+<body>
+<h1>登录方式</h1>
+
+<!-- 普通登录 -->
+<form id="loginForm">
+    <input type="text" name="username" placeholder="用户名">
+    <input type="password" name="password" placeholder="密码">
+    <button type="submit">登录</button>
+</form>
+
+<!-- GitHub 登录按钮 -->
+<a href="/auth/github">
+    <button>使用 GitHub 登录</button>
+</a>
+
+<script>
+    // 普通登录
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        const response = await fetch('/auth/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+            // 保存 token 到 localStorage
+            localStorage.setItem('token', result.accessToken);
+            alert('登录成功！');
+            window.location.href = '/dashboard';
+        } else {
+            alert('登录失败：' + (result.message || '未知错误'));
+        }
+    });
+
+    // 检查 URL 中是否有 GitHub 回调的 token
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    if (token) {
+        localStorage.setItem('token', token);
+        // 清理 URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        window.location.href = '/dashboard';
+    }
+</script>
+</body>
+</html>
