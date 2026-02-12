@@ -36,7 +36,7 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
-    public ProductMapper.Product updateProduct(@PathVariable Long id,
+    public ProductMapper.Product updateProduct(@PathVariable("id") Long id,
                                                @RequestBody Map<String, String> request,
                                                HttpServletRequest httpRequest) {
         ProductMapper.Product product = new ProductMapper.Product();
@@ -47,7 +47,7 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
-    public String deleteProduct(@PathVariable Long id,
+    public String deleteProduct(@PathVariable("id") Long id,
                                 HttpServletRequest httpRequest) {
         productMapper.delete(id);
         return "删除成功";

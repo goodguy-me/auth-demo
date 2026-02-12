@@ -1,0 +1,160 @@
+#version: '3.8'
+
+services:
+  # ---------- nacos ----------
+  nacos:
+    image: nacos/nacos-server:v3.1.1
+    container_name: nacos
+    restart: always
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    environment:
+      - PREFER_HOST_MODE=hostname
+      - MODE=standalone
+      - NACOS_AUTH_IDENTITY_KEY=2222
+      - NACOS_AUTH_IDENTITY_VALUE=2xxx
+      - NACOS_AUTH_TOKEN=SecretKey012345678901234567890123456789012345678901234567890123456789
+    networks:
+      - auth-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+  # ---------- MySQL 数据库 ----------
+  mysql:
+    image: mysql:8.0.32
+    container_name: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_ROOT_PASSWORD: 123456
+    ports:
+      - "13306:3306"
+    volumes:
+      - ./mysql/my.cnf:/etc/mysql/conf.d/mysql.cnf:ro
+      - ./mysql/sql:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 15s
+    networks:
+      - auth-network
+
+  # ---------- LDAP 服务器 ----------
+  ldap-service:
+    image: osixia/openldap:1.5.0
+    container_name: ldap-service
+    hostname: ldap-service
+    environment:
+      - LDAP_ORGANISATION=Example Inc
+      - LDAP_DOMAIN=example.com
+      - LDAP_ADMIN_PASSWORD=adminpassword
+      - LDAP_READONLY_USER=false
+      - LDAP_RFC2307BIS_SCHEMA=true
+      # 🔥 关键：禁用所有可能报错的功能
+      - LDAP_TLS=false
+      - LDAP_REPLICATION=false
+      - LDAP_REMOVE_CONFIG_AFTER_SETUP=true
+      - LDAP_FORCE_RECONFIGURE=true
+      - LDAP_BACKUP=false
+      - LDAP_BACKUP_CONFIG=false
+      - DISABLE_SERVICE=replication,admin-pw   # 彻底禁用缺失文件的服务
+    ports:
+      - "389:389"
+    restart: unless-stopped
+    networks:
+      - auth-network
+#  ldap-service:
+#    image: osixia/openldap:1.5.0
+#    container_name: ldap-service
+#    hostname: ldap-service
+#    environment:
+#      LDAP_ORGANISATION: ${LDAP_ORGANISATION:-Example Inc}
+#      LDAP_DOMAIN: ${LDAP_DOMAIN:-example.com}          # 必须与 LDIF 中一致
+#      LDAP_ADMIN_PASSWORD: ${LDAP_ADMIN_PASSWORD}
+#      LDAP_CONFIG_PASSWORD: ${LDAP_CONFIG_PASSWORD:-configpassword}
+#      LDAP_READONLY_USER: false
+#      LDAP_RFC2307BIS_SCHEMA: true
+#    # 🔥 关键：完全禁用所有可能导致读文件的模块
+#      LDAP_TLS: false
+#      LDAP_REPLICATION: false
+#      LDAP_REMOVE_CONFIG_AFTER_SETUP: true
+#      LDAP_FORCE_RECONFIGURE: true
+#      LDAP_BACKUP: false
+#      LDAP_BACKUP_CONFIG: false
+#    volumes:
+#      # 挂载自定义 LDIF 目录，容器启动时会自动导入所有 .ldif 文件
+#      - ./ldap/config/ldif/custom:/container/service/slapd/assets/config/bootstrap/ldif/custom
+#    restart: always
+#    networks:
+#      - auth-network
+
+#   ---------- 认证服务 ----------
+  auth-service:
+    image: zszadmin/auth-service-app:1.0.0
+    container_name: auth-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      ldap-service:
+        condition: service_started
+    environment:
+      # 数据库配置
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/auth_db?serverTimezone=UTC&characterEncoding=utf8&autoReconnect=true&serverTimezone=Asia/Shanghai
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      # LDAP 配置
+      LDAP_URLS: ldap://ldap-service:389
+      LDAP_BASE: ${LDAP_BASE:-dc=example,dc=com}
+      LDAP_USER_DN: ${LDAP_USER_DN:-cn=admin,dc=example,dc=com}
+      LDAP_PASSWORD: ${LDAP_ADMIN_PASSWORD}   # 与 LDAP 管理员密码一致
+      # JWT 密钥
+      JWT_SECRET: ${JWT_SECRET:-mySuperSecretKeyForJwtTokenGeneration2024}
+      # GitHub OAuth
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      GITHUB_REDIRECT_URI: ${GITHUB_REDIRECT_URI:-http://localhost:7573/auth/github/callback}
+      NACOS_SERVER: nacos:8848
+    restart: always
+    networks:
+      - auth-network
+
+  product-service:
+    image: zszadmin/product-service:1.0.0
+    container_name: product-service
+    depends_on:
+      - auth-service
+    environment:
+      # 数据库配置
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/auth_db?serverTimezone=UTC&characterEncoding=utf8&autoReconnect=true&serverTimezone=Asia/Shanghai
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      NACOS_SERVER: nacos:8848
+
+    restart: always
+    networks:
+      - auth-network
+
+  # ---------- 网关服务 ----------
+  gateway:
+    image: zszadmin/gateway-app:1.0.0
+    container_name: gateway
+    ports:
+      - "7573:7573"
+    depends_on:
+      - auth-service
+    environment:
+      NACOS_SERVER: nacos:8848
+      JWT_SECRET: ${JWT_SECRET:-mySuperSecretKeyForJwtTokenGeneration2024}
+    restart: always
+    networks:
+      - auth-network
+
+networks:
+  auth-network:
+    driver: bridge

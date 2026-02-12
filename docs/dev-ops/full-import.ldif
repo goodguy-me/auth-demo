@@ -1,0 +1,88 @@
+dn: ou=groups,dc=example,dc=com
+objectClass: organizationalUnit
+ou: groups
+
+dn: ou=users,dc=example,dc=com
+objectClass: organizationalUnit
+ou: users
+
+dn: cn=admins,ou=groups,dc=example,dc=com
+objectClass: groupOfNames
+cn: admins
+description: Product Administrators
+member: cn=dummy,dc=example,dc=com
+
+dn: cn=editors,ou=groups,dc=example,dc=com
+objectClass: groupOfNames
+cn: editors
+description: Editors
+member: cn=dummy,dc=example,dc=com
+
+dn: cn=users,ou=groups,dc=example,dc=com
+objectClass: groupOfNames
+cn: users
+description: Regular Users
+member: cn=dummy,dc=example,dc=com
+
+dn: uid=ldap_adm_1,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: ldap_adm_1
+cn: Admin User
+sn: Admin
+userPassword: ldap_adm_1
+loginShell: /bin/bash
+uidNumber: 1001
+gidNumber: 1001
+homeDirectory: /home/ldap_adm_1
+
+dn: uid=ldap_editor_1,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: ldap_editor_1
+cn: Editor User
+sn: Editor
+userPassword: ldap_editor_1
+loginShell: /bin/bash
+uidNumber: 1002
+gidNumber: 1002
+homeDirectory: /home/ldap_editor_1
+
+dn: uid=ldap_user_1,ou=users,dc=example,dc=com
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: ldap_user_1
+cn: Regular User
+sn: User
+userPassword: ldap_user_1
+loginShell: /bin/bash
+uidNumber: 1003
+gidNumber: 1003
+homeDirectory: /home/ldap_user_1
+
+dn: cn=admins,ou=groups,dc=example,dc=com
+changetype: modify
+delete: member
+member: cn=dummy,dc=example,dc=com
+-
+add: member
+member: uid=ldap_adm_1,ou=users,dc=example,dc=com
+
+dn: cn=editors,ou=groups,dc=example,dc=com
+changetype: modify
+delete: member
+member: cn=dummy,dc=example,dc=com
+-
+add: member
+member: uid=ldap_editor_1,ou=users,dc=example,dc=com
+
+dn: cn=users,ou=groups,dc=example,dc=com
+changetype: modify
+delete: member
+member: cn=dummy,dc=example,dc=com
+-
+add: member
+member: uid=ldap_user_1,ou=users,dc=example,dc=com

@@ -1,58 +1,132 @@
-<!-- 前端示例：GitHub 登录按钮 -->
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>GitHub OAuth2 登录</title>
+    <title>统一登录 - 普通 / GitHub / LDAP</title>
+    <style>
+        body { font-family: sans-serif; max-width: 400px; margin: 50px auto; padding: 20px; }
+        form { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        input { width: 100%; padding: 8px; margin: 5px 0; box-sizing: border-box; }
+        button { background: #007bff; color: white; border: none; padding: 10px; width: 100%; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        hr { margin: 30px 0; }
+        .github-btn { background: #24292e; }
+        .github-btn:hover { background: #0b0e11; }
+        .ldap-btn { background: #28a745; }
+        .ldap-btn:hover { background: #1e7e34; }
+    </style>
 </head>
 <body>
-<h1>登录方式</h1>
+<h1>🔐 Uaa 用户认证</h1>
 
 <!-- 普通登录 -->
 <form id="loginForm">
-    <input type="text" name="username" placeholder="用户名">
-    <input type="password" name="password" placeholder="密码">
+    <h3>普通登录</h3>
+    <input type="text" id="username" placeholder="用户名" required>
+    <input type="password" id="password" placeholder="密码" required>
     <button type="submit">登录</button>
 </form>
 
-<!-- GitHub 登录按钮 -->
-<a href="/auth/github">
-    <button>使用 GitHub 登录</button>
-</a>
+<!-- GitHub 登录（统一入口） -->
+<button id="githubLoginBtn" class="github-btn">使用 GitHub 登录</button>
+
+<hr>
+
+<!-- LDAP 登录 -->
+<form id="ldapLoginForm">
+    <h3>LDAP 登录</h3>
+    <input type="text" id="ldapUsername" placeholder="LDAP 用户名" required>
+    <input type="password" id="ldapPassword" placeholder="密码" required>
+    <button type="submit" class="ldap-btn">使用 LDAP 登录</button>
+</form>
 
 <script>
-    // 普通登录
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const data = Object.fromEntries(formData.entries());
-
+    // ---------- 工具函数：统一处理响应 ----------
+    async function unifiedLogin(loginType, username, password) {
         const response = await fetch('/auth/login', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                type: loginType,
+                username: username,
+                password: password
+            })
         });
 
-        const result = await response.json();
-        if (response.ok) {
-            // 保存 token 到 localStorage
-            localStorage.setItem('token', result.accessToken);
-            alert('登录成功！');
+        const result = await response.json();   // 完整响应体
+        if (!response.ok) {
+            // HTTP 错误（4xx/5xx）统一处理
+            throw new Error(result.info || '请求失败');
+        }
+
+        // 业务状态码判断（成功码假设为 '0000'，请根据实际情况调整）
+        if (result.code !== '0000') {
+            // 优先使用 data.errorMessage，其次 info
+            const errorMsg = result.data?.errorMessage || result.info || '登录失败';
+            throw new Error(errorMsg);
+        }
+
+        return result.data; // 成功时返回 data 对象
+    }
+
+    // ---------- 普通登录 ----------
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+
+        try {
+            const data = await unifiedLogin('form', username, password);
+            localStorage.setItem('token', data.accessToken);
+            alert('✅ 普通登录成功！');
             window.location.href = '/dashboard';
-        } else {
-            alert('登录失败：' + (result.message || '未知错误'));
+        } catch (error) {
+            alert('❌ 普通登录失败：' + error.message);
         }
     });
 
-    // 检查 URL 中是否有 GitHub 回调的 token
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    if (token) {
-        localStorage.setItem('token', token);
-        // 清理 URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-        window.location.href = '/dashboard';
-    }
+    // ---------- LDAP 登录 ----------
+    document.getElementById('ldapLoginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('ldapUsername').value.trim();
+        const password = document.getElementById('ldapPassword').value;
+
+        try {
+            const data = await unifiedLogin('ldap', username, password);
+            localStorage.setItem('token', data.accessToken);
+            alert('✅ LDAP 登录成功！');
+            window.location.href = '/dashboard';
+        } catch (error) {
+            alert('❌ LDAP 登录失败：' + error.message);
+        }
+    });
+
+    // ---------- GitHub 登录（第一步：获取重定向地址）----------
+    document.getElementById('githubLoginBtn').addEventListener('click', async () => {
+        try {
+            const data = await unifiedLogin('github'); // 无需账号密码
+            // data.redirectUrl 存在即跳转
+            if (data.redirectUrl) {
+                window.location.href = data.redirectUrl;
+            } else {
+                throw new Error('未返回重定向地址');
+            }
+        } catch (error) {
+            alert('❌ GitHub 登录失败：' + error.message);
+        }
+    });
+
+    // ---------- GitHub OAuth2 回调处理（后端重定向到当前页，URL 带 token）----------
+    (function handleGithubCallback() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        if (token) {
+            localStorage.setItem('token', token);
+            window.history.replaceState({}, document.title, window.location.pathname);
+            alert('✅ GitHub 登录成功！');
+            window.location.href = '/dashboard';
+        }
+    })();
 </script>
 </body>
 </html>

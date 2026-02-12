@@ -3,7 +3,7 @@ package org.example.authservice.config;
 /**
  * @author ZSZ
  * @date 2026/2/11 12:28
- * @description
+ * @description github登录配置类
  */
 
 import org.springframework.boot.context.properties.ConfigurationProperties;

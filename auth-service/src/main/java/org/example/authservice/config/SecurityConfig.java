@@ -30,9 +30,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)  // 禁用CSRF
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/auth/login").permitAll()
-                        .requestMatchers("/auth/github").permitAll()
                         .requestMatchers("/auth/github/callback").permitAll()
-                        .requestMatchers("/auth/ldap").permitAll()
                         .anyRequest().authenticated()
                 );
 

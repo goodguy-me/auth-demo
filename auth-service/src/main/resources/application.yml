@@ -5,7 +5,6 @@ spring:
   application:
     name: auth-service
   datasource:
-#    url: jdbc:mysql://localhost:3306/auth_db?useSSL=false
     url: jdbc:mysql://127.0.0.1:3306/auth_db?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=UTC&useSSL=true
     username: root
     password: 123456
@@ -13,17 +12,17 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: localhost:8848
+        server-addr: ${NACOS_SERVER:localhost:8848}
 github:
   oauth:
-    client-id: ${GITHUB_CLIENT_ID:Ov23li9SDaL9C8ph98Sb}
-    client-secret: ${GITHUB_CLIENT_SECRET:1398eb553dec184c5489a218d1225cd323d165df}
-    redirect-uri: ${GITHUB_REDIRECT_URI:http://localhost:8082/auth/github/callback}
+    client-id: ${GITHUB_CLIENT_ID:Ov23liC0DkHGgOJOzobl}
+    client-secret: ${GITHUB_CLIENT_SECRET:7ee538945c3703e85fc477c66fca9a38f5cde630}
+    redirect-uri: ${GITHUB_REDIRECT_URI:http://localhost:7573/auth/github/callback}
 ldap:
-  urls: ldap://localhost:389
-  base: dc=example,dc=com
-  user-dn: cn=admin,dc=example,dc=com
-  password: adminpassword
+  urls: ${LDAP_URLS:ldap://localhost:389}
+  base: ${LDAP_BASE:dc=example,dc=com}
+  user-dn: ${LDAP_USER_DN:cn=admin,dc=example,dc=com}
+  password: ${LDAP_PASSWORD:adminpassword}
   # 用户搜索过滤条件，{0} 会被替换为用户名
   user-search-filter: (uid={0})
   # 组搜索基础 DN 及过滤条件

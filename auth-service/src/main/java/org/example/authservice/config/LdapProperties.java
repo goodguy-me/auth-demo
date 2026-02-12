@@ -22,7 +22,7 @@ public class LdapProperties {
     private String userSearchFilter;
     private String groupSearchBase;
     private String groupSearchFilter;
-    private Map<String, String> roleMapping = new HashMap<>();
+    private Map<String, String> roleMapping;
 
     public String getUrls() {
         return urls;

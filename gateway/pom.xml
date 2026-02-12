@@ -28,6 +28,10 @@
     </scm>
     <properties>
         <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
     </properties>
     <dependencies>
 <!--        <dependency>-->
@@ -87,7 +91,7 @@
     </dependencies>
 
     <build>
-        <finalName>big-market-app</finalName>
+        <finalName>gateway-app</finalName>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
@@ -108,6 +112,18 @@
         </testResources>
         <plugins>
             <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.6</version>
@@ -124,7 +140,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>2.6.0</version>
                 <configuration>
-                    <mainClass>cn.bugstack.Application</mainClass>
+                    <mainClass>org.example.gateway.GatewayApplication</mainClass>
                     <layout>JAR</layout>
                 </configuration>
             </plugin>
