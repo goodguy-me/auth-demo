@@ -1,6 +1,5 @@
 ## 说明
-jdk17 
-
+jdk17
 ### 进入部署目录
 cd /dev-ops
 ### 运行
@@ -10,7 +9,7 @@ cat ./full-import.ldif | docker exec -i ldap-service ldapadd -x -H ldap://localh
 -w adminpassword
 
 ### 测试
-
+登录页 http://117.72.98.133:7573/
 ### 登录
 curl --request POST ^
 --url http://117.72.98.133:7573/auth/login ^
