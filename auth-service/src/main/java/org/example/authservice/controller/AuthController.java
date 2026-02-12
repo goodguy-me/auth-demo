@@ -53,12 +53,12 @@ public class AuthController {
 
     }
 
-    /**
-     * GitHub 回调入口
-     */
-    @GetMapping("/github/callback")
-    public LoginResponseDTO githubCallback(@RequestParam("code") String code) {
-        return githubCallbackStrategy.handleCallback(code);
-    }
+//    /**
+//     * GitHub 回调入口
+//     */
+//    @GetMapping("/github/callback")
+//    public LoginResponseDTO githubCallback(@RequestParam("code") String code) {
+//        return githubCallbackStrategy.handleCallback(code);
+//    }
 }
 
